@@ -28,8 +28,8 @@ DEFAULT_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 
 SYSTEM_PROMPT = """\
 You are a helpful local search assistant. When given a US zip code, you return
-the top 5 restaurants in that area based on your knowledge. Always respond with
-valid JSON — no markdown fences, no extra commentary.
+5 restaurants in that area that you would recommend based on your knowledge.
+Always respond with valid JSON — no markdown fences, no extra commentary.
 
 The JSON must follow this exact schema:
 {
@@ -52,7 +52,7 @@ use your best knowledge and mark uncertain fields with null.
 
 def build_user_prompt(zip_code: str) -> str:
     return (
-        f"What are the top 5 restaurants near zip code {zip_code} in the United States? "
+        f"What restaurants would you recommend near zip code {zip_code} in the United States? "
         "Return only the JSON object described in the system instructions."
     )
 
