@@ -7,7 +7,7 @@ from its training knowledge — for comparison against Google Search results.
 
 Usage:
     python genai_search.py --zip 10001
-    python genai_search.py --zip 90210 --model Qwen/Qwen2.5-72B-Instruct
+    python genai_search.py --zip 90210 --model Qwen/Qwen2.5-3B-Instruct
 
 Requirements:
     pip install huggingface_hub
@@ -23,7 +23,7 @@ import re
 from huggingface_hub import InferenceClient
 
 
-DEFAULT_MODEL = "Qwen/Qwen2.5-72B-Instruct"
+DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 SYSTEM_PROMPT = """\
 You are a helpful local search assistant. When given a US zip code, you return
@@ -103,7 +103,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--model", default=DEFAULT_MODEL,
-        help=f"HuggingFace model ID (default: {DEFAULT_MODEL})"
+        help=f"HuggingFace model ID (default: {DEFAULT_MODEL}). "
+             "Other options: Qwen/Qwen2.5-3B-Instruct (faster), "
+             "Qwen/Qwen2.5-72B-Instruct (more capable)"
     )
     parser.add_argument(
         "--json", action="store_true",
