@@ -1,0 +1,42 @@
+{
+  "zip_code": "06013",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "note": "Sample output — run genai_search.py with network access to generate live results",
+  "restaurants": [
+    {
+      "rank": 1,
+      "name": "Rein's New York Style Deli",
+      "cuisine": "Deli / American",
+      "address": "435 Hartford Turnpike, Vernon, CT 06066",
+      "notable_for": "A Connecticut institution since 1972, beloved for overstuffed sandwiches and classic Jewish deli fare near the 06013 corridor."
+    },
+    {
+      "rank": 2,
+      "name": "Arugula Bistro",
+      "cuisine": "American / New American",
+      "address": "800 Farmington Ave, West Hartford, CT 06119",
+      "notable_for": "Farm-to-table New American menu with a strong local following and seasonal ingredients sourced from Connecticut farms."
+    },
+    {
+      "rank": 3,
+      "name": "Plan B Burger Bar",
+      "cuisine": "American / Burgers",
+      "address": "221 Farmington Ave, Farmington, CT 06032",
+      "notable_for": "Craft burgers and local beer on tap; a popular casual spot close to the Burlington (06013) area."
+    },
+    {
+      "rank": 4,
+      "name": "Blacksmith's Bar & Grill",
+      "cuisine": "American / Bar & Grill",
+      "address": "95 Spielman Hwy, Burlington, CT 06013",
+      "notable_for": "A neighborhood staple in Burlington proper, known for hearty pub food and a welcoming local atmosphere."
+    },
+    {
+      "rank": 5,
+      "name": "Chili's Grill & Bar",
+      "cuisine": "Tex-Mex / American",
+      "address": "1495 Farmington Ave, Bristol, CT 06010",
+      "notable_for": "The nearest chain option to 06013, consistently rated for reliable Tex-Mex and a family-friendly environment."
+    }
+  ]
+}

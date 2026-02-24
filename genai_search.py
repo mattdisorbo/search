@@ -1,29 +1,30 @@
 """
-GenAI Restaurant Search using Qwen (via Hugging Face Inference API)
+GenAI Restaurant Search using Qwen (local inference via transformers)
 
 Queries a Qwen model for the top 5 restaurants at a given zip code.
 This simulates a GenAI-style search where the model answers directly
 from its training knowledge — for comparison against Google Search results.
 
+The model is downloaded from HuggingFace on first run and cached locally.
+
 Usage:
     python genai_search.py --zip 10001
-    python genai_search.py --zip 90210 --model Qwen/Qwen2.5-3B-Instruct
+    python genai_search.py --zip 06013 --json
+    python genai_search.py --zip 90210 --model Qwen/Qwen2.5-1.5B-Instruct
 
 Requirements:
-    pip install huggingface_hub
-    Set HF_TOKEN env var (optional, but raises rate limits):
-        export HF_TOKEN=hf_your_token_here
+    pip install transformers torch
 """
 
 import argparse
 import json
-import os
 import sys
 import re
-from huggingface_hub import InferenceClient
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
 
 
-DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+DEFAULT_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 
 SYSTEM_PROMPT = """\
 You are a helpful local search assistant. When given a US zip code, you return
@@ -56,20 +57,36 @@ def build_user_prompt(zip_code: str) -> str:
     )
 
 
-def query_qwen(zip_code: str, model: str, hf_token: str | None) -> dict:
-    """Call the Qwen model via HF Inference API and return parsed JSON."""
-    client = InferenceClient(model=model, token=hf_token)
+def query_qwen(zip_code: str, model_id: str) -> dict:
+    """Run the Qwen model locally and return parsed JSON."""
+    print(f"Loading {model_id}...", file=sys.stderr)
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
+    model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype="auto")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model.to(device)
 
-    response = client.chat.completions.create(
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": build_user_prompt(zip_code)},
-        ],
-        max_tokens=1024,
-        temperature=0.3,  # low temp for more consistent, factual answers
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": build_user_prompt(zip_code)},
+    ]
+    text = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
     )
+    inputs = tokenizer(text, return_tensors="pt").to(device)
 
-    raw = response.choices[0].message.content.strip()
+    print("Generating...", file=sys.stderr)
+    with torch.no_grad():
+        output_ids = model.generate(
+            **inputs,
+            max_new_tokens=512,
+            temperature=0.3,
+            do_sample=True,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+
+    # Decode only the newly generated tokens
+    new_tokens = output_ids[0][inputs["input_ids"].shape[1]:]
+    raw = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 
     # Strip markdown code fences if the model adds them despite instructions
     raw = re.sub(r"^```(?:json)?\s*", "", raw)
@@ -104,8 +121,7 @@ def main() -> None:
     parser.add_argument(
         "--model", default=DEFAULT_MODEL,
         help=f"HuggingFace model ID (default: {DEFAULT_MODEL}). "
-             "Other options: Qwen/Qwen2.5-3B-Instruct (faster), "
-             "Qwen/Qwen2.5-72B-Instruct (more capable)"
+             "Other options: Qwen/Qwen2.5-1.5B-Instruct (more capable)"
     )
     parser.add_argument(
         "--json", action="store_true",
@@ -117,17 +133,7 @@ def main() -> None:
         print(f"Error: '{args.zip}' is not a valid 5-digit US zip code.", file=sys.stderr)
         sys.exit(1)
 
-    hf_token = os.environ.get("HF_TOKEN")
-    if not hf_token:
-        print(
-            "Note: HF_TOKEN not set. Using unauthenticated access (rate-limited).\n"
-            "Set HF_TOKEN to a free Hugging Face token to raise limits.\n",
-            file=sys.stderr,
-        )
-
-    print(f"Querying {args.model} for restaurants near {args.zip}...", file=sys.stderr)
-
-    data = query_qwen(zip_code=args.zip, model=args.model, hf_token=hf_token)
+    data = query_qwen(zip_code=args.zip, model_id=args.model)
 
     if args.json:
         print(json.dumps(data, indent=2))
